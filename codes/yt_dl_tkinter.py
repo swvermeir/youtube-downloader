@@ -1,6 +1,5 @@
 import tkinter as tk
 import tkinter.ttk
-import subprocess
 import yt_dl_formats
 import yt_dl_downloader
 import threading
@@ -40,6 +39,19 @@ def formats():
     # Using separate thread so tkinter is still interactable
     thread = threading.Thread(target=thread_operation)
     thread.start()
+    
+    
+def formats_2():
+    opties = info['opties']
+    optie_1 = format_value.get()
+    aud_vid_1 = optie_1.split()[0]
+    if aud_vid_1 == 'audio+video':
+        combo['values'] = ['audio+video geselecteerd']
+    if aud_vid_1 in ('audio', 'video'):
+        aud_vid_2 = 'audio' if aud_vid_1 == 'video' else 'video'
+        opties_2 = [optie for optie in opties if optie.split()[0] == aud_vid_2]
+        combo_2['values'] = opties_2
+        combo_2.current(0)
 
 
 btn_opt = tk.Button(window, text='url controleren', bg='lightgreen', fg='black', command=formats)
@@ -74,6 +86,25 @@ window.grid_rowconfigure(r, minsize=20)
 
 # rij
 r += 1
+lbl = tk.Label(window, text='Optie 2:', font=('Arial Bold', 10), anchor='w')
+lbl.grid(column=0, row=r, sticky="E")
+
+format_value_2 = tk.StringVar()
+combo_2_tekst = 'eerst optie 1 selecteren'
+combo_2 = tk.ttk.Combobox(window, textvariable=format_value_2, values=[combo_2_tekst], state='readonly', width=95)
+combo_2.current(0)
+combo_2.grid(column=1, row=r, columnspan=6)
+
+btn_opt_2 = tk.Button(window, text='Extra optie', bg='lightgreen', fg='black', command=formats_2)
+btn_opt_2.grid(column=8, row=r)
+
+# rij = leeg
+r += 1
+window.grid_rowconfigure(r, minsize=20)
+
+# rij
+r += 1
+
 
 downloads = tk.IntVar()
 completed = tk.IntVar()
@@ -89,8 +120,22 @@ def download():
         feedback2['text'] = 'Eerst url controleren.'
         return
 
+    # Get format_id_2
+    aud_vid = optie.split()[0]
+    
+    optie_2 = format_value_2.get()
+    aud_vid_2 = optie_2.split()[0]
+    
+    if aud_vid == 'audio' and aud_vid_2 == 'video':
+        format_id_2 = info['id_lijst'][info['opties'].index(optie)]
+        optie = optie_2
+    elif aud_vid == 'video' and aud_vid_2 == 'audio':
+        format_id_2 = info['id_lijst'][info['opties'].index(optie_2)]
+    else:
+        format_id_2 = None
+    
+    # Get format_id_1
     format_id = info['id_lijst'][info['opties'].index(optie)]
-    format_id_2 = None
 
     def thread_operation():
         add_one(downloads)

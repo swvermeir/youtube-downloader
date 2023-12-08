@@ -6,7 +6,7 @@ from typing import Any
 from yt_dl_errorhandling import while_errorhandling
 
 logging.basicConfig(level=logging.INFO)
-NONE = frozenset({None, 'none', '', 'None'})
+NONE = (None, 'none', '', 'None')
 NONE_VALUE = '???'
 
 

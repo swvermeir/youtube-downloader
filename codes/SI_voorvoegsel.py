@@ -76,7 +76,7 @@ def update_voorvoegsels():
 #     pass
 with open(prefixenboek_path, 'r') as f:
     prefixenboek = json.load(f)
-    prefixenboek = [prefix for prefix in prefixenboek if not prefix['n'] % 3]  # filter out deci, deca, centi, hecto
+    prefixenboek = [prefix for prefix in prefixenboek if not int(prefix['n']) % 3]  # filter out deci, deca, centi, hecto
 
 
 class SIPrefix:
