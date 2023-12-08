@@ -1,11 +1,9 @@
 # video downloader
-import youtube_dl  # youtube_dl struggles with youtube videos
-import yt_dlp  # yt_dlp is build on youtube_dl but is updated
+import youtube_dl
 import os
 import requests
 import winreg
 from __init__ import test
-from yt_dl_errorhandling import while_errorhandling
 
 
 def download(url, formatie, formatie_audio=None):
@@ -23,16 +21,14 @@ def download(url, formatie, formatie_audio=None):
                    'outtmpl': os.path.join(folder, '%(title)s.%(ext)s')}
 
     # download
-    while_errorhandling(yt_dlp.YoutubeDL(ydl_options).download, url)
+    youtube_dl.YoutubeDL(ydl_options).download(url)
     os.startfile(folder)
-
 
 #download(["https://www.youtube.com/watch?v=XZXZUH4iGLo&ab_channel=RKGAMING"], 160, 140)
 
 
 # testcodes
 test, testtest = False, False
-
 
 if test:
     readfile = open('Opgeslagen settings.txt', 'r')
@@ -139,11 +135,11 @@ if test:
                                       'preferredcodec': vid_ext}]}
 
     # download
-    yt_dlp.YoutubeDL(ydl_options).download(urls)
+    youtube_dl.YoutubeDL(ydl_options).download(urls)
 
 
 if testtest:
-    command = 'py - m yt_dlp'
+    command = 'py - m youtube_dl'
     help = ('!help', '!help ', 'help', '!h', '! help', '!hulp', '! hulp')
     print('Typ "!help" voor meer uitleg.')
     # outtmpl bepalen

@@ -1,3 +1,4 @@
+import pyunpack
 import requests
 import os
 from pyunpack import Archive
@@ -14,48 +15,50 @@ name = ffmpeg_url.split('/')[-1]
 
 info = requests.head(ffmpeg_url).headers
 versie = info['Location'].split('/')[-1]
-if ffmpeg == versie:
+if ffmpeg == versie and False:
     print(f'Requirement already satisfied: {versie}')
 else:
     print('Collecting ffmpeg')
-    ffmpeg = requests.get(ffmpeg_url, stream=True)  # stream=True maakt het mogelijk om iter_content te gebruiken
-
     print(f'  Downloading {versie}')
-    ffmpeg_zip = open(name, 'wb')  # wb = write bites?
-    t_0 = time.perf_counter()
-    print('    0MB', end='')
-    for i, chunk in enumerate(ffmpeg.iter_content(chunk_size=1048576)):
-        if chunk:
-            ffmpeg_zip.write(chunk)
-            t = time.perf_counter()
-            print(f'\r    {i+1}MB {round((i+1)/t, 3):<05}MB/s', end='')
-    print()
-    ffmpeg_zip.close()
-    ffmpeg.close()
+    with requests.get(ffmpeg_url, stream=True) as ffmpeg, open(name, 'wb') as ffmpeg_zip:  # stream=True maakt het mogelijk om iter_content te gebruiken
+        t_0 = time.perf_counter()
+        print('    0MB', end='')
+        for i, chunk in enumerate(ffmpeg.iter_content(chunk_size=1048576)):
+            if chunk:
+                ffmpeg_zip.write(chunk)
+                t = time.perf_counter() - t_0
+                print(f'\r    {i+1}MB {round((i+1)/t, 3):<05}MB/s', end='')
+        print()
 
-    print('Installing collected packages: ffmpeg')
     yt_dl_path = shutil.which('youtube-dl')
     scripts = os.path.dirname(yt_dl_path)
     path = os.path.join(os.path.dirname(__file__), 'zip_extract')
-    Archive(name).extractall(path, auto_create_dir=True)
+    patool_path = shutil.which('patool')
+    Archive(name).extractall(path, auto_create_dir=True, patool_path=patool_path)
 
     exes = glob.glob(path + '/**/*.exe', recursive=True)
     for exe in exes:
         shutil.copy(exe, scripts)
 
+    print(path)
     shutil.rmtree(path)
     os.remove(name)
 
     print(f'Successfully installed {versie.split(".")[0]}')
 
-    # omslachtig ???
-    try: 
-        init = open("__init__.py", 'r+')
-    except:
-        init = open("codes/__init__.py", 'r+')
-    text = init.read()
-    string = 'ffmpeg = '
-    value = re.findall('ffmpeg = "(.*)"\n', text)[0]
-    text = text.replace(value, versie)
-    init.seek(0, 0)
-    init.write(text)
+    # write ffmpeg variable in __init__ file
+    init_file = "__init__.py"
+    if not os.path.exists(init_file):
+        init_file = os.path.join("codes", init_file)
+    
+    with open(init_file, 'r') as f:
+        text = f.read()
+        
+    string = 'ffmpeg = "{}"\n'
+    value = re.findall(string.format("(.*)"), text)[0]
+    old_line = string.format(value)
+    new_line = string.format(versie)
+    text = text.replace(old_line, new_line)
+    
+    with open(init_file, 'w') as f:
+        f.write(text)

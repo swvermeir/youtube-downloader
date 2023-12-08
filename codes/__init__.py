@@ -1,2 +1,2 @@
-test = True
-ffmpeg = "ffmpeg-2022-05-08-git-f77ac5131c-full_build.7z"
+test = False
+ffmpeg = "ffmpeg-2023-12-07-git-f89cff96d0-full_build.7z"

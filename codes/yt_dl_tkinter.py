@@ -4,7 +4,6 @@ import subprocess
 import yt_dl_formats
 import yt_dl_downloader
 from __init__ import test
-import threading
 
 # youtube_dl up to date houden
 #subprocess.run(["py", "-m", "pip", "install", "--upgrade", "youtube_dl"])
@@ -32,14 +31,10 @@ txt.grid(column=1, row=r, sticky="W", columnspan=6)
 
 
 def formats():
-    def thread_operation():
-        titel, id_lijst, opties = yt_dl_formats.formats(url_value.get())
-        info['titel'], info['id_lijst'], info['opties'] = titel, id_lijst, opties
-        combo['values'] = opties
-        combo.current(0)
-
-    thread = threading.Thread(target=thread_operation)
-    thread.start()
+    titel, id_lijst, opties = yt_dl_formats.formats(url_value.get())
+    info['titel'], info['id_lijst'], info['opties'] = titel, id_lijst, opties
+    combo['values'] = opties
+    combo.current(0)
 
 
 if test:
@@ -108,8 +103,7 @@ if test:
 # rij
 r += 1
 
-downloads = tk.IntVar()
-completed = tk.IntVar()
+
 def download():
     optie = format_value.get()
     if optie == combo_tekst:
@@ -134,18 +128,9 @@ def download():
 
     format_id = info['id_lijst'][info['opties'].index(optie)]
 
-    def thread_operation():
-        N = downloads.get()
-        downloads.set(N + 1)
-        yt_dl_downloader.download([url_value.get()], format_id, format_id_2)
-        n = completed.get()
-        completed.set(n + 1)
-
-        feedback1['text'] = f'({completed.get()}/{downloads.get()}) downloads voltooid!!!'
-        feedback2['text'] = 'Controleer downloads folder.'
-
-    thread = threading.Thread(target=thread_operation)
-    thread.start()
+    yt_dl_downloader.download([url_value.get()], format_id, format_id_2)
+    feedback1['text'] = 'Download voltooid!!!'
+    feedback2['text'] = 'Controleer downloads folder.'
 
 
 btn_dl = tk.Button(window, text='Download', bg='orange', fg='black', command=download)

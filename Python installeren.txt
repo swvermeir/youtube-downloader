@@ -1,0 +1,11 @@
+1. Download python
+  a) Surf naar https://www.python.org/downloads/
+  b) Klik op de gele knop "Download Python {PYTHONVERSIE}"
+  c) Open het gedownloade .exe bestand en volg de instructies
+
+2. Add python Scripts folder to PATH
+  a) Open windows start menu
+  b) Typ "De omgevingsvariabelen van het systeem bewerken" en open
+  c) Dubbelklik de "Path" variabele onder "Gebruiksvariabelen voor {GEBRUIKERSNAAM}"
+  d) Druk op "Nieuw" en typ "C:\Users\{GEBRUIKERSNAAM}\AppData\Local\Programs\Python\Python{PYTHONVERSIE}\Scripts"
+    *HINT: Navigeer eerst via de windowsexplorer naar de bovenstaande folder om zeker te zijn dat ze correct is
