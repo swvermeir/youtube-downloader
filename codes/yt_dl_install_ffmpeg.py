@@ -4,10 +4,8 @@ from pyunpack import Archive
 import shutil
 import glob
 import time
-import re
 from local_variables import read_json, write_json
 from SI_voorvoegsel import SIPrefix
-from youtube_dl.utils import try_get
 
 local_vars = read_json() or {}
 ffmpeg = local_vars.get('ffmpeg')
@@ -41,7 +39,7 @@ else:
                 t1 = t2
         print()
 
-    yt_dl_path = shutil.which('youtube-dl')
+    yt_dl_path = shutil.which('yt-dlp')
     scripts = os.path.dirname(yt_dl_path)
     path = os.path.join(os.path.dirname(__file__), 'zip_extract')
     patool_path = shutil.which('patool')
@@ -60,15 +58,6 @@ else:
     init_file = "__init__.py"
     if not os.path.exists(init_file):
         init_file = os.path.join("codes", init_file)
-    
-    with open(init_file, 'r') as f:
-        text = f.read()
         
-    string = 'ffmpeg = "{}"\n'
-    value = re.findall(string.format("(.*)"), text)[0]
-    old_line = string.format(value)
-    new_line = string.format(versie)
-    text = text.replace(old_line, new_line)
-    
-    with open(init_file, 'w') as f:
-        f.write(text)
+    local_vars['ffmpeg'] = versie
+    write_json(local_vars)

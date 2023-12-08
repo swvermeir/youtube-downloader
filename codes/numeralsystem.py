@@ -31,10 +31,11 @@ def decimal_to_base_m(x, m, p=14):
         x = BaseN(str(x), n=n)
 
     sgn = '+' if x.sgn == +1 else '-'
-    x_int, x_float = map(lambda y: BaseN(y, n=n), (x.repr_int(), x.repr_float()))
     base = BaseN(str(m), n=n)
 
     # Integer part
+    rint = x.repr_int()
+    x_int = BaseN(rint, n=n)
     str_int = ''
     while x_int:
         rest = x_int % base
@@ -43,7 +44,12 @@ def decimal_to_base_m(x, m, p=14):
     str_int = str_int[::-1]
 
     # Float part
-    floats = len(str(x_float))
+    # WARNING BaseN(y) was removing important leading 0's from self.repr_float()
+    # I think it is fixed by calculating the amount of floats before BaseN(self.repr_float)
+    # However I am tired so not completely sure
+    rfloat = x.repr_float()
+    floats = len(rfloat)
+    x_float = BaseN(rfloat, n=n)
     een = BaseN('1' + '0' * floats, n=n)
     str_float = ''
     for i in range(p):
@@ -65,14 +71,20 @@ def base_n_to_decimal(x, p=14):
     n = x.n
 
     sgn = '+' if x.sgn == +1 else '-'
-    x_int, x_float = map(lambda y: BaseN(y, n=n), (x.repr_int(), x.repr_float()))
     base = BaseN(str(decimal_to_base_m(x=m, m=n)), n=n)
 
     # Integer part
+    rint = x.repr_int()
+    x_int = BaseN(rint, n=n)
     str_int = str(int(x_int.repr_int(), n))
 
     # Float part
-    floats = len(str(x_float))
+    # WARNING BaseN(y) was removing important leading 0's from self.repr_float()
+    # I think it is fixed by calculating the amount of floats before BaseN(self.repr_float)
+    # However I am tired so not completely sure
+    rfloat = x.repr_float()
+    floats = len(rfloat)
+    x_float = BaseN(rfloat, n=n)
     een = BaseN('1' + '0' * floats, n=n)
     str_float = ''
     for i in range(p):
@@ -87,7 +99,9 @@ def base_n_to_decimal(x, p=14):
 
 def self_other_check(self, other):
     if isinstance(other, (int, float)):
-        other = BaseN(other, n=10).change_base(m=self.n)
+        other = BaseN(other, n=10)
+    if other.n != self.n:
+        other = other.change_base(m=self.n)
     return other
 
 
@@ -104,15 +118,38 @@ class BaseN:
             x = str(x)
 
         self.sgn = -1 if x[0] == '-' else +1
-        x = x.lstrip('+-0')
-        self.str_int, self.str_float = x.rstrip('0').split('.') if '.' in x else (x, '')
+        str_int, str_float = x.split('.') if '.' in x else (x, '')
+        str_int = str_int.lstrip('+-0')
+        str_float = str_float.rstrip('0')
 
-        if not self.str_int:
-            self.str_int = '0'
-            if not self.str_float:
-                self.sgn = +1
+        self.int_default = '0'
 
-        self.list_int, self.list_float = map(letter_str_to_integer_list, (self.str_int, self.str_float))
+        if not str_int:
+            str_int = self.int_default
+            if not str_float:
+                self.sgn = +1  # assume positive zero
+
+        self.list_int, self.list_float = map(letter_str_to_integer_list, (str_int, str_float))
+
+    @classmethod
+    def init_from_list(cls, digits: list[int], floats: int = 0, sign: int = +1, n: int = 10, precision: int = 14):
+        self = cls.__new__(cls)  # Does not call __init__
+        #super(MyClass, obj).__init__()  # Don't forget to call any polymorphic base class initializers
+
+        #assert n in range(2, 10+26+1)  # 10 cijfers + 26 letters en geen base 0 of base 1   # however this only matters for string representation
+        self.n = n
+        self.p = precision
+
+        self.sgn = sign
+        self.list_int = digits[:-floats] if floats else digits
+        self.list_float = digits[-floats:] if floats else []
+        self.int_default = '0'
+        return self
+
+    def get_list_floats(self):
+        floats = len(self.list_float)
+        digits = self.list_int + self.list_float
+        return digits, floats
 
     def get_filled_list(self, n_int, n_float):
         mapping = (list_float, floats), (list_int, ints) = tuple(map(lambda list: (list.copy(), len(list)), (self.list_float, self.list_int)))
@@ -125,8 +162,14 @@ class BaseN:
                 listi.reverse()
         return list_int + list_float
 
+    def zero_check(self):
+        return False if (any(self.list_int) or any(self.list_float)) else True
+
     def __eq__(self, other):
         other = self_other_check(self, other)
+
+        if self.zero_check() and other.zero_check():
+            return True
 
         if self.sgn != other.sgn:
             return False
@@ -139,16 +182,13 @@ class BaseN:
     def __ne__(self, other):
         other = self_other_check(self, other)
 
-        if self.sgn != other.sgn:
-            return False
-
-        floats = max(len(self.list_float), len(other.list_float))
-        ints = max(len(self.list_int), len(other.list_int))
-        list1, list2 = self.get_filled_list(ints, floats), other.get_filled_list(ints, floats)
-        return list1 != list2
+        return not (self == other)
 
     def __lt__(self, other):
         other = self_other_check(self, other)
+
+        if self.zero_check() and other.zero_check():
+            return False
 
         if self.sgn == -1 and other.sgn == +1:
             return True
@@ -169,6 +209,9 @@ class BaseN:
     def __gt__(self, other):
         other = self_other_check(self, other)
 
+        if self.zero_check() and other.zero_check():
+            return False
+
         if self.sgn == -1 and other.sgn == +1:
             return False
         if self.sgn == +1 and other.sgn == -1:
@@ -188,6 +231,9 @@ class BaseN:
     def __le__(self, other):
         other = self_other_check(self, other)
 
+        if self.zero_check() and other.zero_check():
+            return True
+
         if self.sgn == -1 and other.sgn == +1:
             return True
         if self.sgn == +1 and other.sgn == -1:
@@ -206,6 +252,9 @@ class BaseN:
 
     def __ge__(self, other):
         other = self_other_check(self, other)
+
+        if self.zero_check() and other.zero_check():
+            return True
 
         if self.sgn == -1 and other.sgn == +1:
             return False
@@ -228,36 +277,50 @@ class BaseN:
         absolute.sgn = +1
         return absolute
 
-    def __add__(self, other):
+    def add_to_sumlist(self, other):
         other = self_other_check(self, other)
 
         sgn_self, sgn_other = self.sgn, other.sgn
         sgn = sgn_self * sgn_other
         abs_self, abs_other = abs(self), abs(other)
-        num1, sgn1, num2, sgn2 = (abs_self, sgn_self, abs_other, sgn_other) if abs_self > abs_other else (abs_other, sgn_other, abs_self, sgn_self)
+        num1, sgn1, num2, sgn2 = (abs_self, sgn_self, abs_other, sgn_other) if abs_self > abs_other else (
+            abs_other, sgn_other, abs_self, sgn_self)
 
         rest = 0
         sum_list = []
         floats = max(len(num1.list_float), len(num2.list_float))
         ints = max(len(num1.list_int), len(num2.list_int))
         list1, list2 = num1.get_filled_list(ints, floats), num2.get_filled_list(ints, floats)
-        for elem1, elem2 in zip(list1[::-1], list2[::-1]):
-            elem = elem1 + sgn*elem2 + rest
+        list1.reverse()
+        list2.reverse()
+        for elem1, elem2 in zip(list1, list2):
+            elem = elem1 + sgn * elem2 + rest
             rest = elem // self.n
             elem %= self.n
             sum_list.append(elem)
         sum_list.append(rest)
-        sum_str = integer_list_to_letter_str(sum_list[::-1])
-        sum_str = sum_str[:-floats] + '.' + sum_str[-floats:] if floats else sum_str
-        num3 = BaseN(sum_str, self.n)
-        if num3:
-            num3.sgn = sgn1
-        return num3
+        sum_list.reverse()
+        return sum_list, floats, sgn1
+
+    def __add__(self, other):
+        other = self_other_check(self, other)
+
+        sum_list, floats, sign = self.add_to_sumlist(other)
+        return BaseN.init_from_list(sum_list, floats=floats, sign=sign, n=self.n)
 
     def __radd__(self, other):
         other = self_other_check(self, other)
 
         return other.__add__(self)
+
+    # def __iadd__(self, other):  # +=  # self gets adjusted
+    #     other = self_other_check(self, other)
+    #
+    #     sum_list, floats, sign = self.add_to_sumlist(other)
+    #
+    #     self.list_int = sum_list[:-floats] if floats else sum_list
+    #     self.list_float = sum_list[-floats:] if floats else []
+    #     self.sign = sign
 
     def __sub__(self, other):
         other = self_other_check(self, other)
@@ -269,6 +332,11 @@ class BaseN:
 
         return other.__sub__(self)
 
+    # def __isub__(self, other):  # -=
+    #     other = self_other_check(self, other)
+    #
+    #     self.__iadd__(-other)
+
     def __mul__(self, other):
         other = self_other_check(self, other)
 
@@ -278,9 +346,12 @@ class BaseN:
         list1 = self.list_int + self.list_float
         list2 = other.list_int + other.list_float
         mul_list = [0 for _ in (*list1, *list2)]
-        for i, elem1 in enumerate(list1[::-1]):
+
+        list1.reverse()
+        list2.reverse()
+        for i, elem1 in enumerate(list1):
             rest = 0
-            for j, elem2 in enumerate(list2[::-1]):
+            for j, elem2 in enumerate(list2):
                 elem = mul_list[i+j]
                 elem += elem1 * elem2 + rest
                 rest = elem // self.n
@@ -288,13 +359,10 @@ class BaseN:
                 mul_list[i+j] = elem
 
             mul_list[i+j+1] += rest
+        mul_list.reverse()
 
-        mul_str = integer_list_to_letter_str(mul_list[::-1])
-        mul_str = mul_str[:-floats] + '.' + mul_str[-floats:] if floats else mul_str
-
-        if self.sgn * other.sgn == -1:
-            mul_str = '-' + mul_str
-        return BaseN(mul_str, self.n)
+        sgn = self.sgn * other.sgn
+        return BaseN.init_from_list(mul_list, floats, sign=sgn, n=self.n)
 
     def __rmul__(self, other):
         other = self_other_check(self, other)
@@ -311,6 +379,9 @@ class BaseN:
         num1.sgn = num2.sgn = +1
 
         i = BaseN('0', n=self.n)
+        if num1 == Zero():
+            return i
+
         if sgn1*sgn2 == +1:
             while num1 >= num2:
                 num1 -= num2
@@ -385,9 +456,14 @@ class BaseN:
             
         assert other != Zero(), 'Division by zero'
 
+        if other == One():  # make sure other is not One() or Zero() so at least one of self and other have a .p value
+            return self
+
+        p = other.p if (self == One() or self == Zero()) else self.p
+
         int1, int2 = len(self.repr_int()), len(other.repr_int())
         float2 = len(other.repr_float())
-        float1 = self.p + len(other.repr_float())
+        float1 = p + len(other.repr_float())
         floats = float1 - float2
 
         list1, list2 = self.get_filled_list(int1, float1), other.get_filled_list(int2, float2)
@@ -417,26 +493,33 @@ class BaseN:
 
         return other.__truediv__(self)
 
+    def str_int(self):
+        str_int = integer_list_to_letter_str(self.list_int).lstrip('0')
+        return str_int if str_int else self.int_default
+
+    def str_float(self):
+        return integer_list_to_letter_str(self.list_float).rstrip('0')
+
     def __str__(self):
-        str_int = self.str_int.lstrip('0')
-        str_float = self.str_float.rstrip('0')
-        if not str_int:
-            str_int = '0'
+        str_int = self.str_int()
+        str_float = self.str_float()
         dot = '.' if str_float else ''
         sgn = '-' if self.sgn == -1 else ''
         return sgn + str_int + dot + str_float
+
+    # has to be updated, only works for base sub 10 systems
+    # see https://docs.python.org/3.9/library/string.html#formatspec for formatting styles
+    def __format__(self, f=""):
+        return f"{float(self):{f}}"
 
     def __repr__(self):
         return f"BaseN('{str(self)}', {self.n}, {self.p})"
 
     def repr_int(self):
-        str_int = self.str_int.lstrip('0')
-        if not str_int:
-            str_int = '0'
-        return str_int
+        return self.str_int()
 
     def repr_float(self):
-        return self.str_float.rstrip('0')
+        return self.str_float()
 
     def __bool__(self):
         return self != Zero()
@@ -453,24 +536,27 @@ class BaseN:
             n = 0
 
         if n < 0:
+            # too much thinking
             return
 
-        else:
-            str_float = self.str_float[:n]
-            if n+1 < len(self.str_float):
-                return
+        rest = self.list_float[n:]
+        self.list_float = self.list_float[:n]
+        increment = BaseN.init_from_list([0]*n + [1], floats=n)
+        if BaseN.init_from_list(rest, floats=len(rest), n=self.n) >= One() / 2:
+            self += increment
+        return self
 
     def copy(self):
         return eval(repr(self))
 
     def change_base(self, m, p=14):
         n = self.n
-
         sgn = '+' if self.sgn == +1 else '-'
-        x_int, x_float = map(lambda y: BaseN(y, n=n), (self.repr_int(), self.repr_float()))
         base = BaseN(str(decimal_to_base_m(x=m, m=n)), n=n)
 
         # Integer part
+        rint = self.repr_int()
+        x_int = BaseN(rint, n=n)
         str_int = ''
         while x_int:
             rest = x_int % base
@@ -479,7 +565,12 @@ class BaseN:
         str_int = str_int[::-1]
 
         # Float part
-        floats = len(str(x_float))
+        # WARNING BaseN(y) was removing important leading 0's from self.repr_float()
+        # I think it is fixed by calculating the amount of floats before BaseN(self.repr_float)
+        # However I am tired so not completely sure
+        rfloat = self.repr_float()
+        floats = len(rfloat)
+        x_float = BaseN(rfloat, n=n)
         een = BaseN('1' + '0' * floats, n=n)
         str_float = ''
         for i in range(p):
@@ -511,12 +602,12 @@ class Zero(BaseN):
     def __eq__(self, other):
         other = self_other_check(self, other)
             
-        return str(other) == '0'
+        return str(abs(other)) == '0'
 
     def __ne__(self, other):
         other = self_other_check(self, other)
             
-        return str(other) != '0'
+        return str(abs(other)) != '0'
 
     def __lt__(self, other):
         other = self_other_check(self, other)

@@ -1,8 +1,11 @@
+import ssl
+from urllib.parse import urlparse
 import requests
 from requests.structures import CaseInsensitiveDict
 from bs4 import BeautifulSoup, PageElement
 import subprocess
 from urllib.parse import urljoin, urlparse, urlunparse, urlsplit
+import re
 from typing import Iterable, Callable
 import shutil
 import os
@@ -10,6 +13,7 @@ import os
 from tqdm import tqdm
 
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -17,12 +21,14 @@ def is_rel_url(url):
     parsed_url = urlparse(url)
     return not bool(parsed_url.netloc)
 
+
 def get_base_url(url):
     parsed_url = urlparse(url)
     base_url = parsed_url.netloc
     if scheme:
         base_url = f"{scheme}://{base_url}"
     return base_url
+
 
 def fix_rel_url(rel_url, ref_url):
     if not is_rel_url(rel_url):
@@ -39,7 +45,8 @@ def string(iterable, level=1):
         return iterable
     elif isinstance(iterable, (dict, CaseInsensitiveDict)):
         brackets = "{}"
-        iterable = [f"{string(key, level=level+1)}: {string(value, level=level+1)}" for key, value in iterable.items()]
+        iterable = [f"{string(key, level=level + 1)}: {string(value, level=level + 1)}" for key, value in
+                    iterable.items()]
     elif isinstance(iterable, (set, dict)):
         brackets = "{}"
     elif isinstance(iterable, tuple):
@@ -48,10 +55,10 @@ def string(iterable, level=1):
         brackets = "[]"
     else:
         return str(iterable)
-
+    
     iterable_string = brackets[0] + '\n'
     for item in iterable:
-        iterable_string += '\t' * level + string(item, level=level+1) + '\n'
+        iterable_string += '\t' * level + string(item, level=level + 1) + '\n'
     iterable_string += '\t' * (level - 1) + brackets[1]
     return iterable_string
 
@@ -74,7 +81,8 @@ class Program:
         headers = response.headers
         logging.debug(f"Headers = {string(headers)}")
         
-        size = headers.get('Content-Length')  # response.headers = CaseInsensitiveDict => Content-Length == content-length
+        size = headers.get(
+            'Content-Length')  # response.headers = CaseInsensitiveDict => Content-Length == content-length
         if size:
             size = int(size)
         logging.debug(f"size = {size}B")
@@ -95,14 +103,14 @@ class Program:
                     filename = value.strip('"')
         if not filename:
             filename = self.install_url.split('/')[-1]
-            
+        
         try:
             with open(filename, 'wb'):
                 pass
         except:
             filename = type(self).__name__ + ".exe"
         logging.debug(f"filename = {filename}")
-
+        
         chunk_size = 8 * 1024 * 1024
         with open(filename, "wb") as file:
             with tqdm(total=size, unit='B', unit_scale=True) as pbar:
@@ -116,7 +124,7 @@ class Program:
         if silent:
             args.extend(['/Silent', '/s', '/S', '/silent'])
         subprocess.call(args, shell=True)
-        
+    
     def install(self, new_install_folder=None):
         """
         :param new_install_folder: None => Nothing happens; False => install file will be removed; path => install file will be moved
@@ -132,24 +140,25 @@ class Program:
             self.move_install_file(new_install_folder)
         else:
             self.remove_install_file()
-        
+    
     def remove_install_file(self):
         os.remove(self.install_file)
-        
+    
     def move_install_file(self, new_folder: str = None):
         filename = os.path.basename(self.install_file)
         new_path = os.path.join(new_folder, filename)
         shutil.move(self.install_file, new_path)
         self.install_file = new_path
-    
+
+
 class ProgramDownloadFromButton(Program):
     def __init__(self):
         super().__init__()
         self.button_text = None
-        
+    
     def extra_link_condition(self, link: PageElement):
         return True
-        
+    
     def get_button_link(self):
         response = requests.get(self.install_urls_url)
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -169,22 +178,24 @@ class ProgramDownloadFromButton(Program):
                 if self.button_text in a.text.strip() and self.extra_link_condition(a):  # Check for unexact match
                     break
             else:
-                logging.error(f"No <a> tag found with text: \"{self.button_text}\" and extra condition \"{self.extra_link_condition.__name__}\"")
+                logging.error(
+                    f"No <a> tag found with text: \"{self.button_text}\" and extra condition \"{self.extra_link_condition.__name__}\"")
                 raise
-
+        
         url = a['href']
         self.install_url = fix_rel_url(url, self.install_urls_url)
         logging.info(f"Found install url {self.install_url}")
-        
+    
     def get_install_url(self):
         return self.get_button_link()
+
 
 class ProgramDownloadFromMultipleButtons(ProgramDownloadFromButton):
     def __init__(self):
         super().__init__()
         self.all_button_texts = []
         self.all_extra_link_conditions = []
-        
+    
     def get_install_url(self):
         install_urls_url_backup = self.install_urls_url
         for i, self.button_text in enumerate(self.all_button_texts):
@@ -193,7 +204,7 @@ class ProgramDownloadFromMultipleButtons(ProgramDownloadFromButton):
             self.get_button_link()
             self.install_urls_url = self.install_url
         self.install_urls_url = install_urls_url_backup
-    
+
 
 class Notepadpp(Program):
     def __init__(self):
@@ -236,18 +247,21 @@ class AntibodySoftwarePrograms(Program):  # Deprecated since DownloadFromButton 
         self.install_url = fix_rel_url(url, self.install_urls_url)
         logging.info(f"Found install url {self.install_url}")
 
+
 class WizTree(ProgramDownloadFromButton):
     def __init__(self):
         super().__init__()
         self.install_urls_url = "https://diskanalyzer.com/download?ref=upgrade"
         self.button_text = "DOWNLOAD INSTALLER"
 
+
 class WizFile(ProgramDownloadFromButton):
     def __init__(self):
         super().__init__()
         self.install_urls_url = "https://antibody-software.com/wizfile/download?ref=upgrade"
         self.button_text = "DOWNLOAD INSTALLER"
-        
+
+
 class BulkImageDownloader(AntibodySoftwarePrograms):  # Removed from pc
     def __init__(self):
         super().__init__()
@@ -260,7 +274,8 @@ class Everything(ProgramDownloadFromButton):
         super().__init__()
         self.install_urls_url = "https://www.voidtools.com/"
         self.button_text = "Download Installer 64-bit"
-        
+
+
 class Everything_alpha(ProgramDownloadFromButton):
     def __init__(self):
         super().__init__()
@@ -272,8 +287,8 @@ class GlaryUtilities(Program):
     def __init__(self):
         super().__init__()
         self.install_url = "https://download.glarysoft.com/gu5setup.exe"
-        
-        
+
+
 class MalwareBytes(Program):
     def __init__(self):
         super().__init__()
@@ -310,10 +325,11 @@ def update_all():
     pc_programs = [Notepadpp, WizTree, WizFile, Everything, GlaryUtilities, MalwareBytes, SevenZip]
     for program in pc_programs:
         program().install(new_install_folder=r"D:\gebruiker hdd\Set up files")
-        
-        
+
+
 def main():
-    x = update_all()
-    
+    update_all()
+
+
 if __name__ == '__main__':
     main()
