@@ -51,7 +51,7 @@ def formats_2():
         aud_vid_2 = 'audio' if aud_vid_1 == 'video' else 'video'
         opties_2 = [optie for optie in opties if optie.split()[0] == aud_vid_2]
         combo_2['values'] = opties_2
-        combo_2.current(0)
+    combo_2.current(0)
 
 
 btn_opt = tk.Button(window, text='url controleren', bg='lightgreen', fg='black', command=formats)
