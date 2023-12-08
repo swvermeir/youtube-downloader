@@ -1,0 +1,4 @@
+Youtube-dl ideeen:
+	als playlist: beperkte keuze:
+		vb.: enkel mp4, enkel audio, bestaudio!=webm,...
+	

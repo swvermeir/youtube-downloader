@@ -1,0 +1,6 @@
+__pycache__
+build
+dist
+.spec
+yt_dl_tkinter.spec
+.git
