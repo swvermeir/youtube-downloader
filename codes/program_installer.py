@@ -1,11 +1,8 @@
-import ssl
-from urllib.parse import urlparse
 import requests
 from requests.structures import CaseInsensitiveDict
 from bs4 import BeautifulSoup, PageElement
 import subprocess
 from urllib.parse import urljoin, urlparse, urlunparse, urlsplit
-import re
 from typing import Iterable, Callable
 import shutil
 import os
