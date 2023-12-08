@@ -46,7 +46,7 @@ def formats_2():
     optie_1 = format_value.get()
     aud_vid_1 = optie_1.split()[0]
     if aud_vid_1 == 'audio+video':
-        combo['values'] = ['audio+video geselecteerd']
+        combo_2['values'] = ['audio+video geselecteerd']
     if aud_vid_1 in ('audio', 'video'):
         aud_vid_2 = 'audio' if aud_vid_1 == 'video' else 'video'
         opties_2 = [optie for optie in opties if optie.split()[0] == aud_vid_2]
