@@ -2,24 +2,24 @@ import logging
 import sys
 import yt_dlp
 from typing import Callable
-
-
-def lineno():  # does this actually work???
-    return sys._getframe().f_lineno
+import os
 
 
 def while_errorhandling(func: Callable, extra_error_message: str = "", max_tries: int = None):
     def basic_error_stuf(err, i):
-        if hasattr(err, 'usermessage_text') and err.usermessage_text:
-            logging.error(f"[line {lineno()}][attempt {i}/{max_tries}] {err.usermessage_text} ({extra_error_message})")
-        else:
-            logging.error(f"[line {lineno()}][attempt {i}/{max_tries}] {err} ({extra_error_message})")
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        line = exc_tb.tb_lineno
+        base_message = err.usermessage_text if hasattr(err, 'usermessage_text') and err.usermessage_text else err
+        logging.warning(f"[{exc_type}][file {fname}][line {line}][attempt {i}/{max_tries}] {base_message} ({extra_error_message})")
     
     def inner_function(*func_args, **func_kwargs):
         i = 1
         while max_tries is None or i < max_tries:
             try:
                 return func(*func_args, **func_kwargs)
+            except yt_dlp.utils.DownloadError as err:  # invalid filename
+                return err
             except yt_dlp.utils.YoutubeDLError as err:
                 basic_error_stuf(err, i)
             i += 1

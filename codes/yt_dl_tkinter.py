@@ -3,6 +3,9 @@ import tkinter.ttk
 import yt_dl_formats
 import yt_dl_downloader
 import threading
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 # youtube_dl up to date houden
 #subprocess.run(["py", "-m", "pip", "install", "--upgrade", "youtube_dl"])

@@ -20,5 +20,9 @@ def download(url, formatie, formatie_audio=None):
                    'outtmpl': os.path.join(folder, '%(title)s.%(ext)s')}
 
     # download
-    while_errorhandling(yt_dlp.YoutubeDL(ydl_options).download)(url)
+    error = while_errorhandling(yt_dlp.YoutubeDL(ydl_options).download)(url)
+    print(isinstance(error, yt_dlp.utils.DownloadError))
+    if isinstance(error, yt_dlp.utils.DownloadError):  # Invalid filename
+        ydl_options['outtmpl'] = os.path.join(folder, 'untitled.%(ext)s')
+        error = while_errorhandling(yt_dlp.YoutubeDL(ydl_options).download)(url)
     os.startfile(folder)
