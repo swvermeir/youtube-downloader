@@ -31,11 +31,11 @@ else:
             if chunk:
                 ffmpeg_zip.write(chunk)
                 t2 = time.perf_counter()
-                total_size += chunk
+                total_size += len(chunk)
                 current_speed = len(chunk) / (t2 - t1)
                 average_speed = total_size / (t2 - t0)
                 between_speed = current_speed * f + between_speed * (1 - f)
-                print(f"\r    {SIPrefix(total_size, 'B').transform(2):>8} {round(SIPrefix(current_speed, 'B/s').transform(3)):>11}", end='')
+                print(f"\r    {str(SIPrefix(total_size, 'B').transform(2)):>8} {str(round(SIPrefix(current_speed, 'B/s').transform(3))):>11}", end='')
                 t1 = t2
         print()
 

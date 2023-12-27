@@ -7,8 +7,7 @@ print("Aanmaken: Bureaublad snelkoppeling")
 with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders') as key:
     locatie = winreg.QueryValueEx(key, 'Desktop')[0]  # zie code bij Register-editor -> Computer\HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
 name = 'youtube downloader'
-if test:
-    name += ' test'
+
 location = os.path.join(locatie, f'{name}.lnk')
 start = os.path.dirname(__file__)  # folderlocatie waar dit bestand instaat
 target = os.path.join(start, 'yt_dl_tkinter.py')

@@ -103,6 +103,10 @@ class SIPrefix:
     
     def __repr__(self):
         return f"SIPrefix({self.getal}, {self.eenheid})"
+        
+    def __round__(self, n=None):
+        round_getal = round(self.getal, n)
+        return SIPrefix(round_getal, self.eenheid)
     
     def get_getal_eenheid(self):
         return self.getal, self.eenheid
@@ -110,7 +114,7 @@ class SIPrefix:
     def prefixboek(self):
         for prefix in prefixenboek:
             if not int(prefix['n']) % 3:
-                precisie = prefix["Decimaal"]
+                precisie = float(prefix["Decimaal"])
                 if precisie <= self.getal < 1000 * precisie:
                     return prefix
         else:
@@ -118,7 +122,7 @@ class SIPrefix:
     
     def transform(self, dgt: int = None):
         prefixboek = self.prefixboek()
-        self.getal /= prefixboek["Decimaal"]
+        self.getal /= float(prefixboek["Decimaal"])
         self.getal = self.getal if dgt is None else round(self.getal, dgt)
         self.eenheid = prefixboek["Symbool"] + self.eenheid
         return self
@@ -137,6 +141,6 @@ class SIPrefix:
             
             for prefixboek in prefixenboek:
                 if prefixboek["Symbool"] == prefix:
-                    self.getal *= prefixboek["Decimaal"]
+                    self.getal *= float(prefixboek["Decimaal"])
                     self.eenheid = self.eenheid.replace(prefix, '', 1)
         return self
