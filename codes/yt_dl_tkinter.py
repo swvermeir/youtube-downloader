@@ -34,8 +34,8 @@ txt.grid(column=1, row=r, sticky="W", columnspan=6)
 
 def formats():
     def thread_operation():
-        titel, id_lijst, opties = yt_dl_formats.formats(url_value.get())
-        info['titel'], info['id_lijst'], info['opties'] = titel, id_lijst, opties
+        titel, id_lijst, opties, browser = yt_dl_formats.formats(url_value.get())
+        info['titel'], info['id_lijst'], info['opties'], info['browser'] = titel, id_lijst, opties, browser
         combo['values'] = opties
         combo.current(0)
 
@@ -79,7 +79,7 @@ lbl.grid(column=0, row=r, sticky="E")
 
 format_value = tk.StringVar()
 combo_tekst = 'eerst url controleren'
-combo = tk.ttk.Combobox(window, textvariable=format_value, value=[combo_tekst], state='readonly', width=95)
+combo = tk.ttk.Combobox(window, textvariable=format_value, values=[combo_tekst], state='readonly', width=95)
 combo.current(0)
 combo.grid(column=1, row=r, columnspan=6)
 
@@ -142,7 +142,7 @@ def download():
 
     def thread_operation():
         add_one(downloads)
-        yt_dl_downloader.download([url_value.get()], format_id, format_id_2)
+        yt_dl_downloader.download([url_value.get()], format_id, format_id_2, cookiesfrombrowser=info['browser'])
         add_one(completed)
 
         feedback1['text'] = f'({completed.get()}/{downloads.get()}) downloads voltooid!!!'

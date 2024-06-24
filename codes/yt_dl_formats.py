@@ -38,15 +38,18 @@ def formats(url):
     info = while_errorhandling(ydl.extract_info)(url, download=False)
     
     # If DownloadError: try again with cookies
+    browser = None
     if isinstance(info, yt_dlp.utils.DownloadError):
         # supported by yt-dlp: [brave, chrome, chromium, edge, firefox, opera, safari, vivaldi, whale]
         options = ["chrome", "firefox", "edge", "brave"]
         exe_dict = {'edge': "msedge"}
         
-        title = "Choose and confirm to continue..."
+        title = "Private video: Need cookies to continue..."
         message = "Choose a browser to fetch cookies from"
         message_confirm = ("{result} has to be closed to fetch cookies.\n"
                            "Are you sure you want to CLOSE {result}?")
+        message = "Choose browser"
+        message_confirm = "CLOSE {result} & get cookies"
         browser = choose_confirm(title, message, options, message_confirm)
         if browser:
             browser_exe = exe_dict.get(browser, browser)
@@ -131,4 +134,4 @@ def formats(url):
         optie_tekst = [f'{opt: <{20}}' for opt in optie]
         optie_tekst = ''.join(optie_tekst)
         opties.append(optie_tekst)
-    return titel, id_list[::-1], opties[::-1]
+    return titel, id_list[::-1], opties[::-1], browser
