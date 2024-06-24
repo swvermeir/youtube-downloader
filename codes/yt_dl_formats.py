@@ -4,6 +4,8 @@ import SI_voorvoegsel
 import logging
 from typing import Any
 from yt_dl_errorhandling import while_errorhandling
+from yt_dl_confirm import choose_confirm
+import subprocess
 
 NONE = (None, 'none', '', 'None')
 NONE_VALUE = '???'
@@ -34,6 +36,21 @@ def formats(url):
     opties = []
     ydl = yt_dlp.YoutubeDL({})
     info = while_errorhandling(ydl.extract_info)(url, download=False)
+    if isinstance(info, yt_dlp.utils.DownloadError):
+        # supported by yt-dlp: [brave, chrome, chromium, edge, firefox, opera, safari, vivaldi, whale]
+        options = ["chrome", "firefox", "edge", "brave"]
+        exe_dict = {'edge': "msedge"}
+        
+        title = "Choose and confirm to continue..."
+        message = "Choose a browser to fetch cookies from"
+        message_confirm = ("{result} has to be closed to fetch cookies.\n"
+                           "Are you sure you want to CLOSE {result}?")
+        browser = choose_confirm(title, message, options, message_confirm)
+        if browser:
+            browser_exe = exe_dict.get(browser, browser)
+            subprocess.call(f"taskkill /f  /im  {browser_exe}.exe")
+            ydl = yt_dlp.YoutubeDL({'cookiesfrombrowser': (browser, None, None, None)})
+            info = while_errorhandling(ydl.extract_info)(url, download=False)
     
     logging.info("Available video formats found, select your options.")
     logging.debug(info.keys())
