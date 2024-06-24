@@ -36,6 +36,8 @@ def formats(url):
     opties = []
     ydl = yt_dlp.YoutubeDL({})
     info = while_errorhandling(ydl.extract_info)(url, download=False)
+    
+    # If DownloadError: try again with cookies
     if isinstance(info, yt_dlp.utils.DownloadError):
         # supported by yt-dlp: [brave, chrome, chromium, edge, firefox, opera, safari, vivaldi, whale]
         options = ["chrome", "firefox", "edge", "brave"]
